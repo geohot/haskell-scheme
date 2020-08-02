@@ -89,8 +89,16 @@ readExpr input = case parse parseExpr "lisp" input of
 
 -- ****** Eval ******
 
+unpackNum :: LispVal -> Integer
+unpackNum (Number n) = n
+unpackNum _ = 0
+-- no weak typing
+
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
-numericBinop f [Number x, Number y] = Number (f x y)
+numericBinop op params = Number $ foldl1 op $ map unpackNum params
+
+compareBinop [Atom x, Atom y] = (Bool (x==y))
+compareBinop _ = (Bool False)
 
 primitives :: [(String, [LispVal] -> LispVal)]
 primitives = [("+", numericBinop (+)),
@@ -99,12 +107,14 @@ primitives = [("+", numericBinop (+)),
               ("/", numericBinop div),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
-              ("remainder", numericBinop rem)]
+              ("remainder", numericBinop rem),
+              ("eq?", compareBinop)]
 
 apply :: String -> [LispVal] -> LispVal
 apply func args = maybe (Bool False) ($ args) $ lookup func primitives
 
 eval :: LispVal -> LispVal
+eval val@(Atom _) = val
 eval val@(String _) = val
 eval val@(Number _) = val
 eval val@(Bool _) = val
