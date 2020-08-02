@@ -3,6 +3,7 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
 import Numeric
+import System.IO
 
 -- ****** Data Types ******
 
@@ -91,14 +92,28 @@ readExpr input = case parse parseExpr "lisp" input of
 
 unpackNum :: LispVal -> Integer
 unpackNum (Number n) = n
-unpackNum _ = 0
+unpackNum (Bool True) = 1
+unpackNum (Bool False) = 0
 -- no weak typing
+
+unpackStr :: LispVal -> String
+unpackStr (String s) = s
+
+unpackBool :: LispVal -> Bool
+unpackBool (Bool b) = b
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
 numericBinop op params = Number $ foldl1 op $ map unpackNum params
 
 compareBinop [Atom x, Atom y] = (Bool (x==y))
 compareBinop _ = (Bool False)
+
+boolBinop :: (LispVal -> a) -> (a -> a -> Bool) -> [LispVal] -> LispVal
+boolBinop unpacker op [x, y] = Bool $ (unpacker x) `op` (unpacker y)
+
+numBoolBinop = boolBinop unpackNum
+strBoolBinop = boolBinop unpackStr
+boolBoolBinop = boolBinop unpackBool
 
 primitives :: [(String, [LispVal] -> LispVal)]
 primitives = [("+", numericBinop (+)),
@@ -108,6 +123,19 @@ primitives = [("+", numericBinop (+)),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
+              ("=", numBoolBinop (==)),
+              ("<", numBoolBinop (<)),
+              (">", numBoolBinop (>)),
+              ("/=", numBoolBinop (/=)),
+              (">=", numBoolBinop (>=)),
+              ("<=", numBoolBinop (<=)),
+              ("&&", boolBoolBinop (&&)),
+              ("||", boolBoolBinop (||)),
+              ("string=?", strBoolBinop (==)),
+              ("string<?", strBoolBinop (<)),
+              ("string>?", strBoolBinop (>)),
+              ("string<=?", strBoolBinop (<=)),
+              ("string>=?", strBoolBinop (>=)),
               ("eq?", compareBinop)]
 
 apply :: String -> [LispVal] -> LispVal
@@ -115,14 +143,31 @@ apply func args = maybe (Bool False) ($ args) $ lookup func primitives
 
 eval :: LispVal -> LispVal
 eval val@(Atom _) = val
+eval val@(Float _) = val
 eval val@(String _) = val
 eval val@(Number _) = val
 eval val@(Bool _) = val
 eval (List [Atom "quote", val]) = val
 eval (List (Atom func : args)) = apply func $ map eval args
 
+
+-- ****** REPL ******
+
+readPrompt :: String -> IO String
+readPrompt prompt = putStr prompt >> hFlush stdout >> getLine
+
+evalString :: String -> IO String
+evalString expr = return $ show $ eval $ readExpr expr
+
+evalAndPrint :: String -> IO ()
+evalAndPrint expr = evalString expr >>= putStrLn
+
+until_ pred prompt action = do
+  result <- prompt
+  if pred result
+    then return ()
+    else action result >> until_ pred prompt action
+
 main :: IO ()
-main = do
-  (expr:_) <- getArgs
-  putStrLn $ show $ eval $ readExpr expr
+main = until_ (== "quit") (readPrompt "Lisp>>> ") evalAndPrint
 
