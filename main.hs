@@ -4,6 +4,8 @@ import System.Environment
 import Control.Monad
 import Numeric
 
+-- ****** Data Types ******
+
 data LispVal = Atom String
              | List [LispVal]
              | DottedList [LispVal] LispVal
@@ -12,6 +14,8 @@ data LispVal = Atom String
              | String String
              | Bool Bool
              deriving Show
+
+-- ****** Parser ******
 
 parseString :: Parser LispVal
 parseString = do
@@ -78,13 +82,37 @@ spaces = skipMany1 space
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
 
-readExpr :: String -> String
+readExpr :: String -> LispVal
 readExpr input = case parse parseExpr "lisp" input of
-  Left err -> "No match: " ++ show err
-  Right val -> "Found value" ++ show val
+  Left err -> String $ "No match: " ++ show err
+  Right val -> val
+
+-- ****** Eval ******
+
+numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
+numericBinop f [Number x, Number y] = Number (f x y)
+
+primitives :: [(String, [LispVal] -> LispVal)]
+primitives = [("+", numericBinop (+)),
+              ("-", numericBinop (-)),
+              ("*", numericBinop (*)),
+              ("/", numericBinop div),
+              ("mod", numericBinop mod),
+              ("quotient", numericBinop quot),
+              ("remainder", numericBinop rem)]
+
+apply :: String -> [LispVal] -> LispVal
+apply func args = maybe (Bool False) ($ args) $ lookup func primitives
+
+eval :: LispVal -> LispVal
+eval val@(String _) = val
+eval val@(Number _) = val
+eval val@(Bool _) = val
+eval (List [Atom "quote", val]) = val
+eval (List (Atom func : args)) = apply func $ map eval args
 
 main :: IO ()
 main = do
   (expr:_) <- getArgs
-  putStrLn (readExpr expr)
+  putStrLn $ show $ eval $ readExpr expr
 
