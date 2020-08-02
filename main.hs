@@ -52,6 +52,15 @@ parseExpr = parseAtom
         <|> parseFloat
         <|> parseNumber
 
+parseList :: Parser LispVal
+parseList = liftM List $ sepBy parseExpr spaces
+
+parseDottedList :: Parser LispVal
+parseDottedList = do
+  head <- endBy parseExpr spaces
+  tail <- char '.' >> spaces >> parseExpr
+  return $ DottedList head tail
+
 spaces :: Parser ()
 spaces = skipMany1 space
 
