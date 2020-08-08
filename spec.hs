@@ -2,21 +2,19 @@ module Spec where
 
 import Main hiding (main)
 import Test.Hspec
+import Data.Foldable
+
+test exprs expected = it (head exprs) $ do
+    env <- primitiveBindings
+    for_ (init exprs) $ evalString env
+    result <- evalString env (last exprs)
+    shouldBe result expected
 
 main :: IO ()
 main = hspec $ do
   describe "tests" $ do
-    it "(+ 137 349)" $ do
-      env <- primitiveBindings
-      result <- evalString env "(+ 137 349)" 
-      shouldBe result "Number 486"
-    it "(+ (* 3 (+ (* 2 4) (+ 3 5))) (+ (- 10 7) 6))" $ do
-      env <- primitiveBindings
-      result <- evalString env "(+ (* 3 (+ (* 2 4) (+ 3 5))) (+ (- 10 7) 6))" 
-      shouldBe result "Number 57"
-    it "(define size 2)" $ do
-      env <- primitiveBindings
-      evalString env "(define size 2)" 
-      result <- evalString env "size" 
-      shouldBe result "Number 2"
+    test ["(+ 137 349)"] "Number 486"
+    test ["(+ (* 3 (+ (* 2 4) (+ 3 5))) (+ (- 10 7) 6))"] "Number 57"
+    test ["(define size 2)", "size"] "Number 2"
+    test ["(define (square x) (* x x))", "(square 4)"] "Number 16"
 

@@ -69,7 +69,7 @@ data LispVal = Atom String
              | String String
              | Bool Bool
              | PrimitiveFunc ([LispVal] -> LispVal)
-             | Func { params :: [LispVal], vararg :: (Maybe String),
+             | Func { params :: [String], vararg :: (Maybe String),
                       body :: [LispVal], closure :: Env }
              deriving Show
 
@@ -159,6 +159,9 @@ unpackNum (Bool False) = 0
 unpackStr :: LispVal -> String
 unpackStr (String s) = s
 
+unpackAtom :: LispVal -> String
+unpackAtom (Atom s) = s
+
 unpackBool :: LispVal -> Bool
 unpackBool (Bool b) = b
 
@@ -208,7 +211,14 @@ primitiveBindings = do
 
 apply :: LispVal -> [LispVal] -> IO LispVal
 apply (PrimitiveFunc func) args = return $ func args
-apply (Func params vararg body closure) args = return $ (Bool True)
+apply (Func params vararg body closure) args = do 
+  mapM (bindVar closure) (zip params args)
+  -- TODO: why is body a list? I don't think this is always right
+  eval closure (body !! 0)
+  where bindVar env (p, arg) = defineVar env p arg
+  
+
+-- return $ (Bool False)
 
 {-
 apply (Atom func) args = return $ maybe
@@ -217,7 +227,7 @@ apply (Atom func) args = return $ maybe
   (lookup func primitives)
 -}
 
-makeFunc varargs env params body = return $ Func params varargs body env
+makeFunc varargs env params body = return $ Func (map unpackAtom params) varargs body env
 makeNormalFunc = makeFunc Nothing
 
 eval :: Env -> LispVal -> IO LispVal
