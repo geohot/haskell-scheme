@@ -25,4 +25,8 @@ main = hspec $ do
     test ["(if #f 7 3)"] "Number 3"
     test ["(define (abs x) (if (< x 0) (- x) x))",
           "(+ (abs 5) (abs (- 5)))"] "Number 10"
+    test ["(define (abs x) (cond ((> x 0) x) ((= x 0) 0) ((< x 0) (- x))))",
+          "(abs (- 1))"] "Number 1"
+    test ["(define (abs x) (cond ((< x 0) (- x)) (else x)))",
+          "(abs (- 10))"] "Number 10"
 
