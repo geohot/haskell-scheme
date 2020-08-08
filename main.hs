@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-} 
+
 module Main where
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
@@ -10,6 +12,9 @@ import Data.IORef
 -- ****** Environment ******
 
 type Env = IORef [(String, IORef LispVal)]
+
+instance Show (IORef a) where
+    show _ = "<ioref>"
 
 nullEnv :: IO Env
 nullEnv = newIORef []
@@ -55,6 +60,7 @@ defineVar envRef var value = do
 
 -- ****** Data Types ******
 
+
 data LispVal = Atom String
              | List [LispVal]
              | DottedList [LispVal] LispVal
@@ -62,7 +68,13 @@ data LispVal = Atom String
              | Float Float
              | String String
              | Bool Bool
+             | PrimitiveFunc ([LispVal] -> LispVal)
+             | Func { params :: [LispVal], vararg :: (Maybe String),
+                      body :: [LispVal], closure :: Env }
              deriving Show
+
+instance Show ([LispVal] -> LispVal) where
+    show _ = "<primitive>"
 
 -- ****** Parser ******
 
@@ -186,8 +198,22 @@ primitives = [("+", numericBinop (+)),
               ("string>=?", strBoolBinop (>=)),
               ("eq?", compareBinop)]
 
-apply :: String -> [LispVal] -> LispVal
-apply func args = maybe (Bool False) ($ args) $ lookup func primitives
+makePrimitiveFunc env (var, func) = defineVar env var (PrimitiveFunc func)
+
+primitiveBindings :: IO Env
+primitiveBindings = do
+  env <- nullEnv
+  mapM (makePrimitiveFunc env) primitives
+  return env
+
+apply :: LispVal -> [LispVal] -> IO LispVal
+apply (Atom func) args = return $ maybe
+  (Bool False)
+  ($ args)
+  (lookup func primitives)
+
+makeFunc varargs env params body = return $ Func params varargs body env
+makeNormalFunc = makeFunc Nothing
 
 eval :: Env -> LispVal -> IO LispVal
 eval _ val@(Float _) = return val
@@ -198,9 +224,11 @@ eval _ (List [Atom "quote", val]) = return val
 eval env (Atom id) = getVar env id
 eval env (List [Atom "define", Atom var, form]) = 
   eval env form >>= defineVar env var
+eval env (List (Atom "define" : List (Atom var : params) : body)) =
+  makeNormalFunc env params body >>= defineVar env var
 eval env (List (Atom func : args)) = do
  x <- mapM (eval env) args
- return $ apply func x
+ apply (Atom func) x
 --eval env (List (Atom func : args)) = return $ apply func $ mapM (eval env) args
 
 -- ****** REPL ******
@@ -222,6 +250,6 @@ until_ pred prompt action = do
 
 main :: IO ()
 main = do
-  env <- nullEnv
+  env <- primitiveBindings
   until_ (== "quit") (readPrompt "Lisp>>> ") (evalAndPrint env)
 
