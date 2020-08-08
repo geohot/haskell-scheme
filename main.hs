@@ -241,6 +241,11 @@ eval env (List [Atom "define", Atom var, form]) =
   eval env form >>= defineVar env var
 eval env (List (Atom "define" : List (Atom var : params) : body)) =
   makeNormalFunc env params body >>= defineVar env var
+eval env (List [Atom "if", pred, conseq, alt]) = do
+  result <- eval env pred
+  case result of
+    Bool False -> eval env alt
+    otherwise -> eval env conseq
 eval env (List (Atom func : args)) = do
  x <- mapM (eval env) args
  f <- (getVar env func)
