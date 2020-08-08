@@ -8,7 +8,6 @@ import Numeric
 import System.IO
 import Control.Monad.IO.Class
 import Data.IORef
-import Data.List
 
 -- ****** Environment ******
 
