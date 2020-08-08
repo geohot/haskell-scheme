@@ -26,3 +26,27 @@ main = hspec $ do
     test ["(define (abs x) (if (< x 0) (- x) x))",
           "(+ (abs 5) (abs (- 5)))"] "Number 10"
 
+    -- parsing has some problems with spaces
+    test ["( * 2 2 )"] "Number 4" -- currently a parse error
+
+    -- the stuff below might technically be more like 1.1.8 stuff,
+    -- so not strictly within chapter 1.1.7
+
+    -- this is why "body" is a list
+    test ["(define (forthpower n) (define m (* n n)) (* m m))",
+          "(forthpower 3)"] "Number 81" -- currently produces "Number 81"
+
+    -- parameter definitions should not leak
+    test ["(define (square x) (* x x))",
+          "(define x 42)",
+          "(square 5)",
+          "x"] "Number 42" -- currently produces "Number 5"
+    test ["(define (square x) (* x x))",
+          "(define (fithpower x) (* (square (square x)) x))",
+          "(fithpower 4)"] "Number 1024" -- currently produces "Number 4096"
+
+    -- and in general, local definitions should only be visible inside of the function
+    test ["(define m 42)",
+          "(define (forthpower n) (define m (* n n)) (* m m))",
+          "(forthpower 3)",
+          "m"] "Number 42" -- currently produces "Number 81"
