@@ -2,3 +2,12 @@ Following https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours tuto
 
 To run examples from https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book.html
 
+TODO:
+* Add float support
+* Add "cond" support
+* Clean up readme
+
+Write tests!
+
+Should be all of Chapter One of SICP
+
