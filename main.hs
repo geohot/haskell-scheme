@@ -198,19 +198,24 @@ primitives = [("+", numericBinop (+)),
               ("string>=?", strBoolBinop (>=)),
               ("eq?", compareBinop)]
 
-makePrimitiveFunc env (var, func) = defineVar env var (PrimitiveFunc func)
 
 primitiveBindings :: IO Env
 primitiveBindings = do
   env <- nullEnv
   mapM (makePrimitiveFunc env) primitives
   return env
+  where makePrimitiveFunc env (var, func) = defineVar env var (PrimitiveFunc func)
 
 apply :: LispVal -> [LispVal] -> IO LispVal
+apply (PrimitiveFunc func) args = return $ func args
+apply (Func params vararg body closure) args = return $ (Bool True)
+
+{-
 apply (Atom func) args = return $ maybe
   (Bool False)
   ($ args)
   (lookup func primitives)
+-}
 
 makeFunc varargs env params body = return $ Func params varargs body env
 makeNormalFunc = makeFunc Nothing
@@ -228,7 +233,12 @@ eval env (List (Atom "define" : List (Atom var : params) : body)) =
   makeNormalFunc env params body >>= defineVar env var
 eval env (List (Atom func : args)) = do
  x <- mapM (eval env) args
- apply (Atom func) x
+ f <- (getVar env func)
+ apply f x
+
+--eval env (List (Atom func : args)) = do
+-- x <- mapM (eval env) args
+-- apply (Atom func) x
 --eval env (List (Atom func : args)) = return $ apply func $ mapM (eval env) args
 
 -- ****** REPL ******
