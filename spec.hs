@@ -34,7 +34,7 @@ main = hspec $ do
 
     -- this is why "body" is a list
     test ["(define (forthpower n) (define m (* n n)) (* m m))",
-          "(forthpower 3)"] "Number 81" -- currently produces "Number 81"
+          "(forthpower 3)"] "Number 81" -- currently produces "Number 9"
 
     -- parameter definitions should not leak
     test ["(define (square x) (* x x))",
@@ -49,4 +49,4 @@ main = hspec $ do
     test ["(define m 42)",
           "(define (forthpower n) (define m (* n n)) (* m m))",
           "(forthpower 3)",
-          "m"] "Number 42" -- currently produces "Number 81"
+          "m"] "Number 42" -- currently produces "Number 9"
