@@ -246,6 +246,14 @@ eval env (List [Atom "if", pred, conseq, alt]) = do
   case result of
     Bool False -> eval env alt
     otherwise -> eval env conseq
+eval env (List (Atom "cond" : pairs)) = evalCond pairs
+    where evalCond (List [Atom "else", value] : []) = eval env value
+          evalCond (List [condition, value] : rest) = do
+            conditionResult <- eval env condition
+            case conditionResult of
+                Bool True -> eval env value
+                _ -> evalCond rest
+          evalCond [] = pure $ Atom ""
 eval env (List (Atom func : args)) = do
  x <- mapM (eval env) args
  f <- (getVar env func)
