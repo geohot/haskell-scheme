@@ -251,8 +251,8 @@ eval env (List (Atom "cond" : pairs)) = evalCond pairs
           evalCond (List [condition, value] : rest) = do
             conditionResult <- eval env condition
             case conditionResult of
-                Bool True -> eval env value
-                _ -> evalCond rest
+                Bool False -> evalCond rest
+                _ -> eval env value
           evalCond [] = pure $ Atom ""
 eval env (List (Atom func : args)) = do
  x <- mapM (eval env) args
