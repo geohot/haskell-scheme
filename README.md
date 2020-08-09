@@ -3,8 +3,8 @@ This project aims to write a Scheme using Haskell. It follows the [Write Yoursel
 
 ### Related Twitch Streams 
 |Part 1   |Part 1.5 | Part 2  |
-|---------|---------|---------|
-|[<img src="https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8/adccee82df67487d86be_georgehotz_2368789169_148112716//thumb/thumb0-320x180.jpg">](https://www.twitch.tv/videos/698538222) | [<img src="https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8/0308129917f003ef9898_georgehotz_2400084145_150068709//thumb/thumb0-320x180.jpg">](https://www.twitch.tv/videos/703470743)  | [<img src="https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8/8241bf1c7e1cc82ef94c_georgehotz_2404664993_150355018//thumb/thumb0-320x180.jpg">](https://www.twitch.tv/videos/704147445) |
+|:-------:|:-------:|:-------:|
+|[<img src="https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8/adccee82df67487d86be_georgehotz_2368789169_148112716//thumb/thumb0-320x180.jpg">](https://www.twitch.tv/videos/698538222)<br>([Twitch](https://www.twitch.tv/videos/698538222)) ([YouTube](https://www.youtube.com/watch?v=5QsC_VeYL4g)) | [<img src="https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8/0308129917f003ef9898_georgehotz_2400084145_150068709//thumb/thumb0-320x180.jpg">](https://www.twitch.tv/videos/703470743)<br>([Twitch](https://www.twitch.tv/videos/698538222)) ([YouTube](https://www.youtube.com/watch?v=DJSyCHlry7Y)) | [<img src="https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8/8241bf1c7e1cc82ef94c_georgehotz_2404664993_150355018//thumb/thumb0-320x180.jpg">](https://www.twitch.tv/videos/704147445)<br>([Twitch](https://www.twitch.tv/videos/698538222)) ([YouTube](https://www.youtube.com/watch?v=JMXzoB0-vQo)) |
 
 ## What is a Scheme?
 A Scheme is a statically scoped and properly tail-recursive dialect of the Lisp programming language.  
@@ -25,7 +25,7 @@ Tests are defined in the `spec.hs` file. Feel free to add more!
 |Name               |Status   |
 |-------------------|---------|
 |Add float support  | 👷 TODO |
-|Add "cond" support | 👷 TODO |
+|Add "cond" support | ✔️ DONE |
 
 
 
