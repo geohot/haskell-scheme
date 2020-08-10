@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE FlexibleInstances #-}
 
 module Main where
 import Text.ParserCombinators.Parsec hiding (spaces)
@@ -60,12 +60,50 @@ defineVar envRef var value = do
 
 -- ****** Data Types ******
 
+data NumVal = Integer Integer | Float Float
+
+-- holy boilerplate, Batman!
+instance Eq NumVal where
+  (==) (Integer a) (Integer b) = a==b
+  (==) (Integer a) (Float b) = (fromInteger a)==b
+  (==) (Float a) (Integer b) = a==(fromInteger b)
+  (==) (Float a) (Float b) = a==b
+instance Ord NumVal where
+  compare (Integer a) (Integer b) = compare a b
+  compare (Integer a) (Float b) = compare (fromInteger a) b
+  compare (Float a) (Integer b) = compare a (fromInteger b)
+  compare (Float a) (Float b) = compare a b
+instance Num NumVal where
+  (+) (Integer a) (Integer b) = Integer $ a+b
+  (+) (Integer a) (Float b) = Float $ (fromInteger a)+b
+  (+) (Float a) (Integer b) = Float $ a+(fromInteger b)
+  (+) (Float a) (Float b) = Float $ a+b
+  (*) (Integer a) (Integer b) = Integer $ a*b
+  (*) (Integer a) (Float b) = Float $ (fromInteger a)*b
+  (*) (Float a) (Integer b) = Float $ a*(fromInteger b)
+  (*) (Float a) (Float b) = Float $ a*b
+  signum (Integer a) = Integer $ signum a
+  signum (Float a) = Float $ signum a
+  negate (Integer a) = Integer $ negate a
+  negate (Float a) = Float $ negate a
+instance Real NumVal where
+  toRational (Integer a) = toRational a
+  toRational (Float a) = toRational a
+instance Enum NumVal where -- idklol
+instance Integral NumVal where
+  div (Integer a) (Integer b) = Integer $ div a b
+  quotRem (Integer a) (Integer b) = (\(x,y) -> (Integer x,Integer y)) $ quotRem a b
+instance Fractional NumVal where
+  (/) (Integer a) (Integer b) = Float $ (fromInteger a)/(fromInteger b)
+  (/) (Integer a) (Float b) = Float $ (fromInteger a)/b
+  (/) (Float a) (Integer b) = Float $ a/(fromInteger b)
+  (/) (Float a) (Float b) = Float $ a/b
 
 data LispVal = Atom String
              | List [LispVal]
              | DottedList [LispVal] LispVal
              | Number Integer
-             | Float Float
+             | Fraction Float
              | String String
              | Bool Bool
              | PrimitiveFunc ([LispVal] -> LispVal)
@@ -109,7 +147,7 @@ parseFloat = do
   char '.'
   y <- many1 digit
   let atom = (x ++ "." ++ y)
-  return $ Float $ read atom
+  return $ Fraction $ read atom
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
@@ -150,10 +188,11 @@ readExpr input = case parse parseExpr "lisp" input of
 
 -- ****** Eval ******
 
-unpackNum :: LispVal -> Integer
-unpackNum (Number n) = n
-unpackNum (Bool True) = 1
-unpackNum (Bool False) = 0
+unpackNum :: LispVal -> NumVal
+unpackNum (Number n) = Integer n
+unpackNum (Fraction n) = Float n
+unpackNum (Bool True) = Integer 1
+unpackNum (Bool False) = Integer 0
 -- no weak typing
 
 unpackStr :: LispVal -> String
@@ -165,8 +204,12 @@ unpackAtom (Atom s) = s
 unpackBool :: LispVal -> Bool
 unpackBool (Bool b) = b
 
-numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
-numericBinop op params = Number $ foldl1 op $ map unpackNum params
+polyOp :: NumVal -> LispVal
+polyOp (Integer a) = Number a
+polyOp (Float a) = Fraction a
+
+numericBinop :: (NumVal -> NumVal -> NumVal) -> [LispVal] -> LispVal
+numericBinop op params = polyOp $ foldl1 op $ map unpackNum params
 
 compareBinop [Atom x, Atom y] = (Bool (x==y))
 compareBinop _ = (Bool False)
@@ -182,7 +225,8 @@ primitives :: [(String, [LispVal] -> LispVal)]
 primitives = [("+", numericBinop (+)),
               ("-", numericBinop (-)),
               ("*", numericBinop (*)),
-              ("/", numericBinop div),
+              ("/", numericBinop (/)),
+              ("div", numericBinop div),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
@@ -231,7 +275,7 @@ makeFunc varargs env params body = return $ Func (map unpackAtom params) varargs
 makeNormalFunc = makeFunc Nothing
 
 eval :: Env -> LispVal -> IO LispVal
-eval _ val@(Float _) = return val
+eval _ val@(Fraction _) = return val
 eval _ val@(String _) = return val
 eval _ val@(Number _) = return val
 eval _ val@(Bool _) = return val
