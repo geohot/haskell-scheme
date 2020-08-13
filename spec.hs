@@ -29,9 +29,9 @@ main = hspec $ do
           "(abs (- 1))"] "Number 1"
     test ["(define (abs x) (cond ((< x 0) (- x)) (else x)))",
           "(abs (- 10))"] "Number 10"
-    test ["(cond (1 1) (else 2))"] "Number 1" -- currently produces "Number 2"
-    -- analogous test for `if`
+    test ["(cond (1 1) (else 2))"] "Number 1"
     test ["(if 1 1 2)"] "Number 1"
+    test ["(= 1 1.0)"] "Bool True"
 
     -- parsing has some problems with spaces
     test ["( * 2 2 )"] "Number 4" -- currently a parse error
