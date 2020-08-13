@@ -62,26 +62,17 @@ defineVar envRef var value = do
 
 data NumVal = Integer Integer | Float Float
 
--- holy boilerplate, Batman!
 instance Eq NumVal where
-  (==) (Integer a) (Integer b) = a==b
-  (==) (Integer a) (Float b) = (fromInteger a)==b
-  (==) (Float a) (Integer b) = a==(fromInteger b)
-  (==) (Float a) (Float b) = a==b
+  Integer a == Integer b = a == b
+  a == b = numValToFloat a == numValToFloat b
 instance Ord NumVal where
-  compare (Integer a) (Integer b) = compare a b
-  compare (Integer a) (Float b) = compare (fromInteger a) b
-  compare (Float a) (Integer b) = compare a (fromInteger b)
-  compare (Float a) (Float b) = compare a b
+  Integer a `compare` Integer b = a `compare` b
+  a `compare` b = numValToFloat a `compare` numValToFloat b
 instance Num NumVal where
-  (+) (Integer a) (Integer b) = Integer $ a+b
-  (+) (Integer a) (Float b) = Float $ (fromInteger a)+b
-  (+) (Float a) (Integer b) = Float $ a+(fromInteger b)
-  (+) (Float a) (Float b) = Float $ a+b
-  (*) (Integer a) (Integer b) = Integer $ a*b
-  (*) (Integer a) (Float b) = Float $ (fromInteger a)*b
-  (*) (Float a) (Integer b) = Float $ a*(fromInteger b)
-  (*) (Float a) (Float b) = Float $ a*b
+  Integer a + Integer b = Integer $ a + b
+  a + b = Float $ numValToFloat a + numValToFloat b
+  Integer a * Integer b = Integer $ a * b
+  a * b = Float $ numValToFloat a * numValToFloat b
   signum (Integer a) = Integer $ signum a
   signum (Float a) = Float $ signum a
   negate (Integer a) = Integer $ negate a
@@ -91,13 +82,14 @@ instance Real NumVal where
   toRational (Float a) = toRational a
 instance Enum NumVal where -- idklol
 instance Integral NumVal where
-  div (Integer a) (Integer b) = Integer $ div a b
-  quotRem (Integer a) (Integer b) = (\(x,y) -> (Integer x,Integer y)) $ quotRem a b
+  Integer a `div` Integer b = Integer $ a `div` b
+  Integer a `quotRem` Integer b = (\(x,y) -> (Integer x,Integer y)) $ a `quotRem` b
 instance Fractional NumVal where
-  (/) (Integer a) (Integer b) = Float $ (fromInteger a)/(fromInteger b)
-  (/) (Integer a) (Float b) = Float $ (fromInteger a)/b
-  (/) (Float a) (Integer b) = Float $ a/(fromInteger b)
-  (/) (Float a) (Float b) = Float $ a/b
+  a / b = Float $ numValToFloat a / numValToFloat b
+
+numValToFloat :: NumVal -> Float
+numValToFloat (Float a) = a
+numValToFloat (Integer a) = fromInteger a
 
 data LispVal = Atom String
              | List [LispVal]
